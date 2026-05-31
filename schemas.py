@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel , Field
+from typing import Optional
 
 class ProductCreate(BaseModel):
 
@@ -11,4 +12,17 @@ class ProductCreate(BaseModel):
     stock:int
 
     category:str
-    
+
+
+class Update_ProductCreate(BaseModel):
+
+    name : Optional[str]
+
+    description : Optional[str]
+
+    price : Optional[float]
+
+    stock : Optional[int]
+
+    category : Optional[str]
+

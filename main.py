@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from database import Base, engine, SessionLocal
 from models import Product
-from schemas import ProductCreate
+from schemas import ProductCreate, Update_ProductCreate
 from sqlalchemy.orm import session
 from fastapi.responses import JSONResponse
 
@@ -55,4 +55,41 @@ def product_by_id(product_id:int, db:session=Depends(get_db)):
         raise HTTPException(status_code=400, detail="product not found")
     
     return product
+
+@app.delete("/products/{product_id}")
+def delete_product( product_id:int ,db:session=Depends(get_db)):
+
+    del_product=db.query(Product).filter(product_id==Product.id).first()
+
+    if not del_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    db.delete(del_product)
+    db.commit()
+
+    return JSONResponse(status_code=200, content={"message":"Product deleted successfully"})
+
+@app.put("/product/{product_id}")
+def update_product( product_id : int, product:Update_ProductCreate, db:session=Depends(get_db)):
+
+    prod=db.query(Product).filter(product_id==Product.id).first()
+
+    if not prod:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    
+    prod.name = product.name
+
+    prod.description = product.description
+
+    prod.price = product.price
+
+    prod.stock = product.stock
+
+    prod.category = product.category
+
+    db.commit()
+    db.refresh(prod)
+
+    return JSONResponse(status_code=200, content={"message":"Product updated successfully"})
 
