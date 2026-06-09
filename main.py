@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from database import Base, engine, SessionLocal
-from models import Product
-from schemas import ProductCreate, Update_ProductCreate
+from models import Product, Cart
+from schemas import ProductCreate, Update_ProductCreate, CreateCart
 from sqlalchemy.orm import session
 from fastapi.responses import JSONResponse
 import json
@@ -134,3 +134,36 @@ def filter_product(product_name:str = None ,product_category:str = None , min_pr
         raise HTTPException(status_code=404, detail="Product not found")
     
     return products
+
+@app.post("/cart/add")
+def add_to_cart(cart: CreateCart, db:session=Depends(get_db)):
+
+    product=db.query(Product).filter(
+        Product.id==cart.product_id
+    ).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    if cart.quantity <= 0:
+        raise HTTPException(status_code=400, detail="Quantity must be greater than 0")
+    
+    if cart.quantity >= product.stock:
+        raise HTTPException(status_code=400, detail="Insufficient stock")
+    
+    cart_items= Cart(
+        product_id=cart.product_id,
+        quantity=cart.quantity
+    )
+
+    db.add(cart_items)
+    db.commit()
+    db.refresh(cart_items)
+
+    return JSONResponse(
+        status_code=201,
+        content={
+            "message":"Product added to cart",
+            "cart_id": cart_items.id
+        }
+    )
